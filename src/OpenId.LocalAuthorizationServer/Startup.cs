@@ -11,6 +11,7 @@
     using Microsoft.Owin.Security.Cookies;
     using Owin;
     using Owin.Security.OpenIdConnect.Server;
+    using Serilog;
 
     public sealed class Startup
     {
@@ -23,11 +24,15 @@
         public const string TokenEndpoint = "/connect/token";
         public const string UserinfoEndpoint = "/connect/userinfo";
 
-
         // This code configures Web API. The Startup class is specified as a type
         // parameter in the WebApp.Start method.
         public void Configuration(IAppBuilder appBuilder)
         {
+            Serilog.ILogger logger = new LoggerConfiguration()
+                .WriteTo
+                .Console(outputTemplate: "{Timestamp:HH:mm} [{Level}] ({Name:l}){NewLine} {Message}{NewLine}{Exception}")
+                .CreateLogger();
+
             appBuilder.UseCookieAuthentication(new CookieAuthenticationOptions
             {
                 AuthenticationMode = AuthenticationMode.Active,
@@ -57,6 +62,8 @@
                 // but is useful to ensure unnecessary keys are not persisted in testing environments, which also
                 // helps make the unit tests run faster, as no registry or disk access is required in this case.
                 options.DataProtectionProvider = new EphemeralDataProtectionProvider(new LoggerFactory());
+
+                options.Logger = new Logger(logger);
             });
 
             appBuilder.Use((context, next) =>
